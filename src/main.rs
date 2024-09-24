@@ -1,5 +1,6 @@
 use clap::Parser;
 use cosmrs::distribution::MsgWithdrawValidatorCommission;
+use cosmrs::proto::prost::Message;
 use cosmrs::tx::Msg;
 use cosmrs::{
     crypto::secp256k1::SigningKey,
@@ -107,12 +108,10 @@ async fn main() -> Result<()> {
         .await?;
     let mut query_client =
         cosmrs::proto::cosmos::auth::v1beta1::query_client::QueryClient::new(channel);
-    let request = tonic::Request::new(
-        cosmrs::proto::cosmos::auth::v1beta1::QueryAccountInfoRequest {
-            address: validator_address.to_string(),
-        },
-    );
-    let account_info = match query_client.account_info(request).await {
+    let request = tonic::Request::new(cosmrs::proto::cosmos::auth::v1beta1::QueryAccountRequest {
+        address: validator_address.to_string(),
+    });
+    let account_info = match query_client.account(request).await {
         Ok(account_info) => account_info,
         Err(e) => {
             log::error!("Failed to query account info: {}", e);
@@ -124,7 +123,11 @@ async fn main() -> Result<()> {
     };
 
     // Query the account information
-    let account_number = account_info.into_inner().info.unwrap().account_number;
+    let account_any = account_info.into_inner().account.unwrap();
+    let base_account =
+        cosmrs::proto::cosmos::auth::v1beta1::BaseAccount::decode(account_any.value.as_slice())
+            .map_err(|e| eyre::eyre!("Failed to decode BaseAccount: {}", e))?;
+    let account_number = base_account.account_number;
 
     // Create the sign doc
     let Ok(chain_id) = Id::from_str(&args.chain_id) else {
