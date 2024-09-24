@@ -23,10 +23,7 @@ struct Args {
     #[arg(long, default_value = "https://sommelier-rpc.polkachu.com:443")]
     rpc_url: String,
 
-    #[arg(
-        long,
-        default_value = "https://sommelier-grpc.polkachu.com:14190"
-    )]
+    #[arg(long, default_value = "https://sommelier-grpc.polkachu.com:14190")]
     grpc_url: String,
 
     #[arg(long, default_value = "usomm")]
@@ -93,9 +90,6 @@ async fn main() -> Result<()> {
         Height::try_from(args.timeout_height)?,
     );
 
-    // Set up the signer info
-    let signer_info = SignerInfo::single_direct(Some(signing_key.public_key()), 0);
-
     // Set up the fee (adjust as needed)
     let Ok(coin) = Coin::new(1000, &args.denom) else {
         log::error!("Failed to parse coin");
@@ -114,9 +108,15 @@ async fn main() -> Result<()> {
             address: validator_address.to_string(),
         },
     );
-    let Ok(account_info) = query_client.account_info(request).await else {
-        log::error!("Failed to query account info");
-        return Err(eyre::Report::msg("Failed to query account info"));
+    let account_info = match query_client.account_info(request).await {
+        Ok(account_info) => account_info,
+        Err(e) => {
+            log::error!("Failed to query account info: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to query account info: {}",
+                e
+            )));
+        }
     };
 
     // Query the account information
@@ -127,7 +127,10 @@ async fn main() -> Result<()> {
         log::error!("Failed to parse chain ID");
         return Err(eyre::Report::msg("Failed to parse chain ID"));
     };
-    let sign_doc = SignDoc::new(
+
+    // Set up the signer info
+    let signer_info = SignerInfo::single_direct(Some(signing_key.public_key()), 0);
+    let sign_doc = match SignDoc::new(
         &tx_body,
         &AuthInfo {
             fee,
@@ -135,12 +138,27 @@ async fn main() -> Result<()> {
         },
         &chain_id,
         account_number,
-    )?;
+    ) {
+        Ok(sign_doc) => sign_doc,
+        Err(e) => {
+            log::error!("Failed to create sign doc: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to create sign doc: {}",
+                e
+            )));
+        }
+    };
 
     // Sign the transaction
-    let Ok(tx_raw) = sign_doc.sign(&signing_key) else {
-        log::error!("Failed to sign transaction");
-        return Err(eyre::Report::msg("Failed to sign transaction"));
+    let tx_raw = match sign_doc.sign(&signing_key) {
+        Ok(tx_raw) => tx_raw,
+        Err(e) => {
+            log::error!("Failed to sign transaction: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to sign transaction: {}",
+                e
+            )));
+        }
     };
 
     // Create a client and broadcast the transaction
@@ -148,13 +166,25 @@ async fn main() -> Result<()> {
         log::error!("Failed to create client");
         return Err(eyre::Report::msg("Failed to create client"));
     };
-    let Ok(tx_bytes) = tx_raw.to_bytes() else {
-        log::error!("Failed to convert transaction to bytes");
-        return Err(eyre::Report::msg("Failed to convert transaction to bytes"));
+    let tx_bytes = match tx_raw.to_bytes() {
+        Ok(tx_bytes) => tx_bytes,
+        Err(e) => {
+            log::error!("Failed to convert transaction to bytes: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to convert transaction to bytes: {}",
+                e
+            )));
+        }
     };
-    let Ok(response) = client.broadcast_tx_commit(tx_bytes).await else {
-        log::error!("Failed to broadcast transaction");
-        return Err(eyre::Report::msg("Failed to broadcast transaction"));
+    let response = match client.broadcast_tx_commit(tx_bytes).await {
+        Ok(response) => response,
+        Err(e) => {
+            log::error!("Failed to broadcast transaction: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to broadcast transaction: {}",
+                e
+            )));
+        }
     };
 
     log::info!("Transaction submitted successfully!");
