@@ -124,9 +124,18 @@ async fn main() -> Result<()> {
 
     // Query the account information
     let account_any = account_info.into_inner().account.unwrap();
-    let base_account =
-        cosmrs::proto::cosmos::auth::v1beta1::BaseAccount::decode(account_any.value.as_slice())
-            .map_err(|e| eyre::eyre!("Failed to decode BaseAccount: {}", e))?;
+    let base_account = match cosmrs::proto::cosmos::auth::v1beta1::BaseAccount::decode(
+        account_any.value.as_slice(),
+    ) {
+        Ok(base_account) => base_account,
+        Err(e) => {
+            log::error!("Failed to decode BaseAccount: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to decode BaseAccount: {}",
+                e
+            )));
+        }
+    };
     let account_number = base_account.account_number;
 
     // Create the sign doc
