@@ -203,8 +203,7 @@ async fn main() -> Result<()> {
         }
     };
 
-    log::info!("Transaction submitted successfully!");
-    log::info!("Transaction hash: {}", response.hash);
+    println!("Response: {:?}", response);
 
     Ok(())
 }
