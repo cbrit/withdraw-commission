@@ -74,6 +74,10 @@ async fn main() -> Result<()> {
         ));
     };
 
+    // log addresses
+    log::info!("Validator address: {}", validator_address);
+    log::info!("Validator operator address: {}", validator_operator_address);
+
     // Create the message
     let msg = MsgWithdrawValidatorCommission {
         validator_address: validator_operator_address,
