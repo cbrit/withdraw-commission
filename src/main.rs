@@ -137,6 +137,7 @@ async fn main() -> Result<()> {
         }
     };
     let account_number = base_account.account_number;
+    let sequence_number = base_account.sequence;
 
     // Create the sign doc
     let Ok(chain_id) = Id::from_str(&args.chain_id) else {
@@ -145,7 +146,7 @@ async fn main() -> Result<()> {
     };
 
     // Set up the signer info
-    let signer_info = SignerInfo::single_direct(Some(signing_key.public_key()), 0);
+    let signer_info = SignerInfo::single_direct(Some(signing_key.public_key()), sequence_number);
     let sign_doc = match SignDoc::new(
         &tx_body,
         &AuthInfo {
