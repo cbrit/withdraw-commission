@@ -5,7 +5,7 @@ There is a pseudo-bug in the Cosmos SDK commands where both validator `MsgWithdr
 # Usage
 
 ```bash
-withdraw-commission ./path/to/validator/signing/key
+withdraw-commission --private-key-path <PATH TO VALIDATOR SIGNING KEY>
 ```
 
 Optional arguments:
