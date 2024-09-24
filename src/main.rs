@@ -47,32 +47,59 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Read private key from file
-    let Ok(private_key) = fs::read_to_string(&args.signing_key_path) else {
-        log::error!("Failed to read private key from file");
-        return Err(eyre::Report::msg("Failed to read private key from file"));
+    let private_key = match fs::read_to_string(&args.signing_key_path) {
+        Ok(key) => key.trim().to_string(),
+        Err(e) => {
+            log::error!("Failed to read private key from file: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to read private key from file: {}",
+                e
+            )));
+        }
     };
-    let private_key = private_key.trim();
 
     // Create the signing key from the private key
-    let Ok(decoded_private_key) = hex::decode(private_key) else {
-        log::error!("Failed to decode private key");
-        return Err(eyre::Report::msg("Failed to decode private key"));
+    let decoded_private_key = match hex::decode(&private_key) {
+        Ok(decoded) => decoded,
+        Err(e) => {
+            log::error!("Failed to decode private key: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to decode private key: {}",
+                e
+            )));
+        }
     };
-    let Ok(signing_key) = SigningKey::from_slice(&decoded_private_key) else {
-        log::error!("Failed to create signing key");
-        return Err(eyre::Report::msg("Failed to create signing key"));
+    let signing_key = match SigningKey::from_slice(&decoded_private_key) {
+        Ok(key) => key,
+        Err(e) => {
+            log::error!("Failed to create signing key: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to create signing key: {}",
+                e
+            )));
+        }
     };
 
     // Derive the validator address from the private key
-    let Ok(validator_address) = signing_key.public_key().account_id("somm") else {
-        log::error!("Failed to get validator address");
-        return Err(eyre::Report::msg("Failed to get validator address"));
+    let validator_address = match signing_key.public_key().account_id("somm") {
+        Ok(validator_address) => validator_address,
+        Err(e) => {
+            log::error!("Failed to get validator address: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to get validator address: {}",
+                e
+            )));
+        }
     };
-    let Ok(validator_operator_address) = signing_key.public_key().account_id("sommvaloper") else {
-        log::error!("Failed to get validator operator address");
-        return Err(eyre::Report::msg(
-            "Failed to get validator operator address",
-        ));
+    let validator_operator_address = match signing_key.public_key().account_id("sommvaloper") {
+        Ok(validator_operator_address) => validator_operator_address,
+        Err(e) => {
+            log::error!("Failed to get validator operator address: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to get validator operator address: {}",
+                e
+            )));
+        }
     };
 
     // log addresses
@@ -85,9 +112,12 @@ async fn main() -> Result<()> {
     };
 
     // Create the transaction body
-    let Ok(any) = msg.to_any() else {
-        log::error!("Failed to create any");
-        return Err(eyre::Report::msg("Failed to create any"));
+    let any = match msg.to_any() {
+        Ok(any) => any,
+        Err(e) => {
+            log::error!("Failed to create any: {}", e);
+            return Err(eyre::Report::msg(format!("Failed to create any: {}", e)));
+        }
     };
     let tx_body = Body::new(
         vec![any],
@@ -96,9 +126,12 @@ async fn main() -> Result<()> {
     );
 
     // Set up the fee (adjust as needed)
-    let Ok(coin) = Coin::new(1000, &args.denom) else {
-        log::error!("Failed to parse coin");
-        return Err(eyre::Report::msg("Failed to parse coin"));
+    let coin = match Coin::new(1000, &args.denom) {
+        Ok(coin) => coin,
+        Err(e) => {
+            log::error!("Failed to create coin: {}", e);
+            return Err(eyre::Report::msg(format!("Failed to create coin: {}", e)));
+        }
     };
     let fee = Fee::from_amount_and_gas(coin, 200000u64);
 
@@ -140,9 +173,15 @@ async fn main() -> Result<()> {
     let sequence_number = base_account.sequence;
 
     // Create the sign doc
-    let Ok(chain_id) = Id::from_str(&args.chain_id) else {
-        log::error!("Failed to parse chain ID");
-        return Err(eyre::Report::msg("Failed to parse chain ID"));
+    let chain_id = match Id::from_str(&args.chain_id) {
+        Ok(chain_id) => chain_id,
+        Err(e) => {
+            log::error!("Failed to parse chain ID: {}", e);
+            return Err(eyre::Report::msg(format!(
+                "Failed to parse chain ID: {}",
+                e
+            )));
+        }
     };
 
     // Set up the signer info
