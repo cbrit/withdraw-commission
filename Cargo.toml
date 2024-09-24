@@ -2,6 +2,7 @@
 name = "withdraw-commission"
 version = "0.1.0"
 edition = "2021"
+author = ["Collin Brittain <collin@peggy.cool>"]
 
 [dependencies]
 cosmrs = { version = "0.20.0", features = ["rpc", "tendermint-rpc", "grpc"] }

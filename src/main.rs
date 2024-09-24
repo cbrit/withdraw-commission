@@ -14,26 +14,25 @@ use std::{fs, str::FromStr};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, default_value = "sommelier-3")]
+    #[arg(long, default_value = "sommelier-3")]
     chain_id: String,
 
-    #[arg(short, long)]
-    private_key_path: String,
+    #[arg(long)]
+    signing_key_path: String,
 
-    #[arg(short, long, default_value = "https://sommelier-rpc.polkachu.com:443")]
+    #[arg(long, default_value = "https://sommelier-rpc.polkachu.com:443")]
     rpc_url: String,
 
     #[arg(
-        short,
         long,
         default_value = "https://sommelier-grpc.polkachu.com:14190"
     )]
     grpc_url: String,
 
-    #[arg(short, long, default_value = "usomm")]
+    #[arg(long, default_value = "usomm")]
     denom: String,
 
-    #[arg(short, long, default_value = "0")]
+    #[arg(long, default_value = "0")]
     timeout_height: u64,
 }
 
@@ -50,7 +49,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Read private key from file
-    let Ok(private_key) = fs::read_to_string(&args.private_key_path) else {
+    let Ok(private_key) = fs::read_to_string(&args.signing_key_path) else {
         log::error!("Failed to read private key from file");
         return Err(eyre::Report::msg("Failed to read private key from file"));
     };
